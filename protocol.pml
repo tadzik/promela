@@ -128,10 +128,14 @@ active proctype Robot() {
             goto KONIEC_ROBOTA;
         :: do_bazy ! MSG (0, S6_Close_Session, head);
             printf("Robot wysyła close session\n");
-            if
-                :: do_robotow ? MSG (0, S7_End, head);
-                :: timeout -> goto KONIEC_ROBOTA;
-            fi;
+            do
+                :: do_robotow ? MSG (0, msgid, head);
+                printf("Robot otrzymał msg: %d\n", msgid);
+                if
+                    :: (msgid == S7_End) -> goto KONIEC_ROBOTA;
+                    :: else -> skip;
+                fi;
+            od;
             goto KONIEC_ROBOTA;
     :: timeout -> 
         assert(0);
