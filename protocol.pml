@@ -50,16 +50,16 @@ active proctype Baza() {
     byte msgid;
     header head;
     if
-    :: do_bazy ? MSG (ack,  S1_Request, head) -> skip;
-    :: timeout -> 
-	printf("Problemy z połączeniem - baza\n");
-	if 
-	:: do_bazy ? MSG (ack,  S1_Request, head) -> 
-	   skip;
-	   printf("Odzyskano połączenie - baza\n");
-	:: timeout -> 
-	   printf("Utracono połączenie - baza\n");
-	fi;
+        :: do_bazy ? MSG (ack,  S1_Request, head) -> skip;
+        :: timeout ->
+	    printf("Problemy z połączeniem - baza\n");
+	    if
+	        :: do_bazy ? MSG (ack,  S1_Request, head) ->
+	           skip;
+	           printf("Odzyskano połączenie - baza\n");
+	        :: timeout ->
+	           printf("Utracono połączenie - baza\n");
+	    fi;
     fi;
     newSessionId();
     do
