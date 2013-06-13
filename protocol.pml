@@ -52,7 +52,7 @@ inline closeSession() {
     printf("Baza otrzymuje S6, zamykamy interes\n");
     if 
         :: do_robotow ! MSG (0, S7_End, head);
-        :: timeout -> goto KONIEC_BAZY;;
+        :: timeout -> assert(0);
     fi;
     goto KONIEC_BAZY;
 }
