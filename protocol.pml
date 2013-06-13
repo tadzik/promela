@@ -21,11 +21,11 @@ typedef header {
 chan do_robotow = [1] of { mtype, bit, byte, header};
 chan do_bazy    = [1] of { mtype, bit, byte, header};
 
-bit activeSessions[16];
+bit activeSessions[2];
 
 inline newSessionId() {
     int i;
-    for (i : 0..15) {
+    for (i : 0..1) {
         if
         :: (activeSessions[i] == 0) ->
             head.second = i;
