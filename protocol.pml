@@ -45,6 +45,12 @@ FAIL:
 END:
 }
 
+inline closeSession() {
+    printf("Baza otrzymuje S6, zamykamy interes\n");
+    do_robotow ! MSG (0, S7_End, head);
+    goto KONIEC_BAZY;
+}
+
 active proctype Baza() {
     bit ack;
     byte msgid;
@@ -62,15 +68,19 @@ active proctype Baza() {
 	    fi;
     fi;
     newSessionId();
+    printf("Baza wchodzi w pętlę główną\n");
     do
         :: do_bazy ? MSG (0, S6_Close_Session, head) ->
-            printf("Baza otrzymuje S6, zamykamy interes\n");
-            do_robotow ! MSG (0, S7_End, head);
-            goto KONIEC_BAZY;
+            closeSession();
         :: do_robotow ! MSG (0, S3_Control, head) ->
             printf("Wysylam control, czekam na ack\n");
-            do_bazy ? MSG (ack, S4_Ack, head);
-            printf("Dostalem ack\n");
+            if
+                :: do_bazy ? MSG (ack, S4_Ack, head);
+                    printf("Dostalem ack\n");
+                :: do_bazy ? MSG (0, S6_Close_Session, head);
+                    printf("Zamiast ack dostałem close session. Ok.\n");
+                    closeSession();
+            fi;
         :: do_robotow ! MSG (0, S8_Cancelled, head) ->
             printf("Wysylam cancelled, zwijamy interes\n");
             do_robotow ! MSG (0, S7_End, head);
