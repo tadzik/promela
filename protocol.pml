@@ -11,9 +11,6 @@ mtype = { MSG, ACK };
 
 #define REASON_TOOMANY 0
 
-typedef proto {
-    bit id[3];
-};
 
 typedef header {
     byte first;
@@ -21,8 +18,8 @@ typedef header {
 }
 
 
-chan do_robotow = [1] of { mtype, bit, proto, byte, header};
-chan do_bazy    = [1] of { mtype, bit, proto, byte, header};
+chan do_robotow = [1] of { mtype, bit, byte, header};
+chan do_bazy    = [1] of { mtype, bit, byte, header};
 
 bit activeSessions[16];
 
@@ -39,27 +36,26 @@ inline newSessionId() {
     }
     goto FAIL;
 SUCCESS:
-    do_robotow ! MSG (false, protocol, S5_Rejection, head);
+    do_robotow ! MSG (false, S5_Rejection, head);
     goto END;
 FAIL:
     head.second = REASON_TOOMANY;
-    do_robotow ! MSG (0, protocol, S5_Rejection, head);
+    do_robotow ! MSG (0, S5_Rejection, head);
     goto KONIEC_BAZY;
 END:
 }
 
 active proctype Baza() {
     bit ack;
-    proto protocol;
     byte msgid;
     header head;
 
-    do_bazy ? MSG (ack, protocol, S1_Request, head);
+    do_bazy ? MSG (ack,  S1_Request, head);
     newSessionId();
     do
-        :: do_robotow ! MSG (0, protocol, S3_Control, head) ->
+        :: do_robotow ! MSG (0, S3_Control, head) ->
             printf("Wysylam control, czekam na ack\n");
-            do_bazy ? MSG (ack, protocol, S4_Ack, head);
+            do_bazy ? MSG (ack, S4_Ack, head);
             printf("Dostalem ack\n");
     od;
 KONIEC_BAZY:
@@ -67,21 +63,20 @@ KONIEC_BAZY:
 
 active proctype Robot() {
     bit ack;
-    proto protocol;
     int sessionid;
     byte msgid;
     header head;
     head.first = 1;
 
     atomic {
-        do_bazy ! MSG (0, protocol, S1_Request, head);
-        do_robotow ? MSG (ack, protocol, msgid, head) ->
+        do_bazy ! MSG (0, S1_Request, head);
+        do_robotow ? MSG (ack,  msgid, head) ->
         printf("Przydzielone sessionid: %d\n", head.second);
     }
     do
-        :: do_robotow ? MSG (ack, protocol, S3_Control, head) ->
+        :: do_robotow ? MSG (ack, S3_Control, head) ->
             printf("Dostalem control, odsylam ack\n");
-            do_bazy ! MSG (ack, protocol, S4_Ack, head);
+            do_bazy ! MSG (ack, S4_Ack, head);
         :: timeout ->
             printf("Robot idle\n");
     od
