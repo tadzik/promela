@@ -49,8 +49,18 @@ active proctype Baza() {
     bit ack;
     byte msgid;
     header head;
-
-    do_bazy ? MSG (ack,  S1_Request, head);
+    if
+    :: do_bazy ? MSG (ack,  S1_Request, head) -> skip;
+    :: timeout -> 
+	printf("Problemy z połączeniem - baza\n");
+	if 
+	:: do_bazy ? MSG (ack,  S1_Request, head) -> 
+	   skip;
+	   printf("Odzyskano połączenie - baza\n");
+	:: timeout -> 
+	   printf("Utracono połączenie - baza\n");
+	fi;
+    fi;
     newSessionId();
     do
         :: do_robotow ! MSG (0, S3_Control, head) ->
@@ -82,11 +92,12 @@ active proctype Robot() {
             printf("Dostalem control, odsylam ack\n");
             do_bazy ! MSG (ack, S4_Ack, head);
         :: do_robotow ? MSG (ack, S8_Cancelled, head);
-            printf("Robot otrzymal cancelled\n");
+            printf("Robot otrzymal canceled\n");
             do_bazy ! MSG (0, S7_End, head);
             goto KONIEC_ROBOTA;
-        :: timeout ->
-            printf("Robot idle\n");
+	:: timeout -> 
+		printf("Utracono połączenie - robot\n");
+		break;
     od;
 KONIEC_ROBOTA:
 }
