@@ -42,7 +42,7 @@ FAIL:
     head.second = REASON_TOOMANY;
     if 
         :: do_robotow ! MSG (0, S5_Rejection, head);
-        :: timeout -> goto KONIEC_BAZY;
+        :: timeout -> assert(0);
     fi;
     goto KONIEC_BAZY;
 END:
