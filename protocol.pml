@@ -21,11 +21,11 @@ typedef header {
 chan do_robotow = [1] of { mtype, bit, byte, header};
 chan do_bazy    = [1] of { mtype, bit, byte, header};
 
-bit activeSessions[16];
+bit activeSessions[2];
 
 inline newSessionId() {
     int i;
-    for (i : 0..15) {
+    for (i : 0..1) {
         if
         :: (activeSessions[i] == 0) ->
             head.second = i;
@@ -110,9 +110,14 @@ active proctype Robot() {
             do_bazy ! MSG (0, S7_End, head);
             goto KONIEC_ROBOTA;
         :: do_bazy ! MSG (0, S6_Close_Session, head);
-            printf("Robot wysyła close session\n");
-            do_robotow ? MSG (0, S7_End, head);
-            goto KONIEC_ROBOTA;
+            printf("Robot wysyła close session, czeka na S7\n");
+            do
+                :: do_robotow ? MSG (0, S7_End, head) ->
+                    goto KONIEC_ROBOTA;
+                :: else ->
+                    do_robotow ? MSG (0, msgid, head);
+                    printf("Wiadomosc inna niż S7, id: %d\n", msgid);
+            od;
 	:: timeout -> 
 		printf("Utracono połączenie - robot\n");
 		break;
