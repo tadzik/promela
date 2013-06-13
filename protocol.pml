@@ -63,6 +63,10 @@ active proctype Baza() {
     fi;
     newSessionId();
     do
+        :: do_bazy ? MSG (0, S6_Close_Session, head) ->
+            printf("Baza otrzymuje S6, zamykamy interes\n");
+            do_robotow ! MSG (0, S7_End, head);
+            goto KONIEC_BAZY;
         :: do_robotow ! MSG (0, S3_Control, head) ->
             printf("Wysylam control, czekam na ack\n");
             do_bazy ? MSG (ack, S4_Ack, head);
@@ -94,6 +98,10 @@ active proctype Robot() {
         :: do_robotow ? MSG (ack, S8_Cancelled, head);
             printf("Robot otrzymal canceled\n");
             do_bazy ! MSG (0, S7_End, head);
+            goto KONIEC_ROBOTA;
+        :: do_bazy ! MSG (0, S6_Close_Session, head);
+            printf("Robot wysyła close session\n");
+            do_robotow ? MSG (0, S7_End, head);
             goto KONIEC_ROBOTA;
 	:: timeout -> 
 		printf("Utracono połączenie - robot\n");
