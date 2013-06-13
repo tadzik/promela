@@ -57,6 +57,10 @@ active proctype Baza() {
             printf("Wysylam control, czekam na ack\n");
             do_bazy ? MSG (ack, S4_Ack, head);
             printf("Dostalem ack\n");
+        :: do_robotow ! MSG (0, S8_Cancelled, head) ->
+            printf("Wysylam cancelled, zwijamy interes\n");
+            do_robotow ! MSG (0, S7_End, head);
+            goto KONIEC_BAZY;
     od;
 KONIEC_BAZY:
 }
@@ -70,14 +74,19 @@ active proctype Robot() {
 
     atomic {
         do_bazy ! MSG (0, S1_Request, head);
-        do_robotow ? MSG (ack,  msgid, head) ->
+        do_robotow ? MSG (ack, msgid, head) ->
         printf("Przydzielone sessionid: %d\n", head.second);
     }
     do
         :: do_robotow ? MSG (ack, S3_Control, head) ->
             printf("Dostalem control, odsylam ack\n");
             do_bazy ! MSG (ack, S4_Ack, head);
+        :: do_robotow ? MSG (ack, S8_Cancelled, head);
+            printf("Robot otrzymal cancelled\n");
+            do_bazy ! MSG (0, S7_End, head);
+            goto KONIEC_ROBOTA;
         :: timeout ->
             printf("Robot idle\n");
-    od
+    od;
+KONIEC_ROBOTA:
 }
