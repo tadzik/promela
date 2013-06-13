@@ -36,7 +36,7 @@ inline newSessionId() {
     }
     goto FAIL;
 SUCCESS:
-    do_robotow ! MSG (false, S5_Rejection, head);
+    do_robotow ! MSG (false, S2_Acceptance, head);
     goto END;
 FAIL:
     head.second = REASON_TOOMANY;
