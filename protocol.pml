@@ -41,8 +41,8 @@ SUCCESS:
 FAIL:
     head.second = REASON_TOOMANY;
     if 
-    :: do_robotow ! MSG (0, S5_Rejection, head);
-    :: timeout -> goto KONIEC_BAZY;
+        :: do_robotow ! MSG (0, S5_Rejection, head);
+        :: timeout -> goto KONIEC_BAZY;
     fi;
     goto KONIEC_BAZY;
 END:
@@ -51,8 +51,8 @@ END:
 inline closeSession() {
     printf("Baza otrzymuje S6, zamykamy interes\n");
     if 
-    :: do_robotow ! MSG (0, S7_End, head);
-    :: timeout -> goto KONIEC_BAZY;;
+        :: do_robotow ! MSG (0, S7_End, head);
+        :: timeout -> goto KONIEC_BAZY;;
     fi;
     goto KONIEC_BAZY;
 }
@@ -64,14 +64,14 @@ active proctype Baza() {
     if
         :: do_bazy ? MSG (ack,  S1_Request, head) -> skip;
         :: timeout ->
-	    printf("Problemy z połączeniem - baza\n");
-	    if
-	        :: do_bazy ? MSG (ack,  S4_Ack, head) ->
-	           skip;
-	           printf("Odzyskano połączenie - baza\n");
-	        :: timeout ->
-	           printf("Utracono połączenie - baza\n");
-	    fi;
+        printf("Problemy z połączeniem - baza\n");
+        if
+            :: do_bazy ? MSG (ack,  S4_Ack, head) ->
+               skip;
+               printf("Odzyskano połączenie - baza\n");
+            :: timeout ->
+               printf("Utracono połączenie - baza\n");
+        fi;
     fi;
     newSessionId();
     printf("Baza wchodzi w pętlę główną\n");
@@ -91,8 +91,8 @@ active proctype Baza() {
             printf("Wysylam cancelled, zwijamy interes\n");
             if 
             :: do_robotow ! MSG (0, S7_End, head);
-	    :: timeout -> skip;
-	    fi;
+        :: timeout -> skip;
+        fi;
             goto KONIEC_BAZY;
     od;
 KONIEC_BAZY:
@@ -108,17 +108,17 @@ active proctype Robot() {
     atomic {
         do_bazy ! MSG (0, S1_Request, head);
         if 
-        :: do_robotow ? MSG (ack, S2_Acceptance, head) ->
-	    printf("Przydzielone sessionid: %d\n", head.second);;
-        :: do_robotow ? MSG (ack, S5_Rejection, head) -> goto KONIEC_ROBOTA;
-        :: do_robotow ? MSG (ack, S1_Request, head) -> assert(0);
-	:: do_robotow ? MSG (ack, S3_Control, head) -> assert(0);
-	:: do_robotow ? MSG (ack, S4_Ack, head) -> assert(0);
-	:: do_robotow ? MSG (ack, S6_Close_Session) -> assert(0);
-	:: do_robotow ? MSG (ack, S7_End, head) -> assert(0);
-	:: do_robotow ? MSG (ack, S8_Cancelled, head) -> assert(0);
-   	:: timeout -> goto KONIEC_ROBOTA;
-       	fi
+            :: do_robotow ? MSG (ack, S2_Acceptance, head) ->
+                printf("Przydzielone sessionid: %d\n", head.second);;
+            :: do_robotow ? MSG (ack, S5_Rejection, head) -> goto KONIEC_ROBOTA;
+            :: do_robotow ? MSG (ack, S1_Request, head) -> assert(0);
+            :: do_robotow ? MSG (ack, S3_Control, head) -> assert(0);
+            :: do_robotow ? MSG (ack, S4_Ack, head) -> assert(0);
+            :: do_robotow ? MSG (ack, S6_Close_Session) -> assert(0);
+            :: do_robotow ? MSG (ack, S7_End, head) -> assert(0);
+            :: do_robotow ? MSG (ack, S8_Cancelled, head) -> assert(0);
+            :: timeout -> goto KONIEC_ROBOTA;
+        fi
     }
     do
         :: do_robotow ? MSG (ack, S3_Control, head) ->
@@ -131,14 +131,14 @@ active proctype Robot() {
         :: do_bazy ! MSG (0, S6_Close_Session, head);
             printf("Robot wysyła close session\n");
             if
-	    :: do_robotow ? MSG (0, S7_End, head);
-	    :: timeout -> goto KONIEC_ROBOTA;
-	    fi;
+                :: do_robotow ? MSG (0, S7_End, head);
+                :: timeout -> goto KONIEC_ROBOTA;
+            fi;
             goto KONIEC_ROBOTA;
-	:: timeout -> 
+    :: timeout -> 
         assert(0);
-		printf("Utracono połączenie - robot\n");
-		break;
+        printf("Utracono połączenie - robot\n");
+        break;
     od;
 KONIEC_ROBOTA:
 }
