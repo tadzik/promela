@@ -107,8 +107,18 @@ active proctype Robot() {
 
     atomic {
         do_bazy ! MSG (0, S1_Request, head);
-        do_robotow ? MSG (ack, msgid, head) ->
-        printf("Przydzielone sessionid: %d\n", head.second);
+        if 
+        :: do_robotow ? MSG (ack, S2_Acceptance, head) ->
+	    printf("Przydzielone sessionid: %d\n", head.second);;
+        :: do_robotow ? MSG (ack, S5_Rejection, head) -> goto KONIEC_ROBOTA;
+        :: do_robotow ? MSG (ack, S1_Request, head) -> assert(0);
+	:: do_robotow ? MSG (ack, S3_Control, head) -> assert(0);
+	:: do_robotow ? MSG (ack, S4_Ack, head) -> assert(0);
+	:: do_robotow ? MSG (ack, S6_Close_Session) -> assert(0);
+	:: do_robotow ? MSG (ack, S7_End, head) -> assert(0);
+	:: do_robotow ? MSG (ack, S8_Cancelled, head) -> assert(0);
+   	:: timeout -> goto KONIEC_ROBOTA;
+       	fi
     }
     do
         :: do_robotow ? MSG (ack, S3_Control, head) ->
