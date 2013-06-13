@@ -90,9 +90,9 @@ active proctype Baza() {
         :: do_robotow ! MSG (0, S8_Cancelled, head) ->
             printf("Wysylam cancelled, zwijamy interes\n");
             if 
-            :: do_robotow ! MSG (0, S7_End, head);
-        :: timeout -> skip;
-        fi;
+                :: do_robotow ! MSG (0, S7_End, head);
+                :: timeout -> skip;
+            fi;
             goto KONIEC_BAZY;
     od;
 KONIEC_BAZY:
