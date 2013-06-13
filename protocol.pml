@@ -126,6 +126,7 @@ active proctype Robot() {
 	    fi;
             goto KONIEC_ROBOTA;
 	:: timeout -> 
+        assert(0);
 		printf("Utracono połączenie - robot\n");
 		break;
     od;
