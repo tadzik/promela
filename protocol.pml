@@ -134,6 +134,8 @@ active proctype Robot() {
             do
                 :: do_robotow ? MSG (0, msgid, head);
                 printf("Robot otrzymał msg: %d\n", msgid);
+                // sometimes we get S8_Cancelled.
+                // it happens whenever base sends this signal before it really receives S6_Close_Session 
                 if
                     :: (msgid == S7_End) -> goto KONIEC_ROBOTA;
                     :: else assert(0);
