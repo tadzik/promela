@@ -160,7 +160,9 @@ active proctype PerfectProxy() {
             do_robotow ! MSG (ack, msgid, head);
         :: do_bazy_proxy ? MSG (ack, msgid, head) ->
             do_bazy ! MSG (ack, msgid, head);
-    od
+        :: timeout -> goto PPROXY_END;
+    od;
+PPROXY_END:
 }
 
 proctype Proxy() {
@@ -178,5 +180,7 @@ proctype Proxy() {
             :: do_bazy ! ACK (ack, msgid, head);
             :: skip
         fi
-    od
+        :: timeout -> goto PROXY_END;
+    od;
+PROXY_END:
 }
