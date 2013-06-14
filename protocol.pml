@@ -122,6 +122,9 @@ active proctype Robot() {
         :: do_robotow ? MSG (ack, S3_Control, head) ->
             printf("Dostalem control, odsylam ack\n");
             do_bazy ! MSG (ack, S4_Ack, head);
+	:: do_robotow ? MSG (ack, S2_Acceptance, head) ->assert(0);
+	:: do_robotow ? MSG (ack, S5_Rejection, head) ->assert(0);
+	:: do_robotow ? MSG (ack, S7_End, head) ->assert(0);
         :: do_robotow ? MSG (ack, S8_Cancelled, head);
             printf("Robot otrzymal canceled\n");
             do_bazy ! MSG (0, S7_End, head);
@@ -133,8 +136,9 @@ active proctype Robot() {
                 printf("Robot otrzymał msg: %d\n", msgid);
                 if
                     :: (msgid == S7_End) -> goto KONIEC_ROBOTA;
-                    :: else -> skip;
+                    :: else assert(0);
                 fi;
+
             od;
             goto KONIEC_ROBOTA;
         :: timeout -> 
