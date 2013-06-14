@@ -61,7 +61,7 @@ active proctype Baza() {
     bit ack;
     byte msgid;
     header head;
-    do_bazy ? MSG (ack,  S1_Request, head) -> skip;
+    do_bazy ? MSG (ack,  S1_Request, head);
     newSessionId();
     printf("Baza wchodzi w pętlę główną\n");
     do
