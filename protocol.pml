@@ -61,18 +61,7 @@ active proctype Baza() {
     bit ack;
     byte msgid;
     header head;
-    if
-        :: do_bazy ? MSG (ack,  S1_Request, head) -> skip;
-        :: timeout ->
-        printf("Problemy z połączeniem - baza\n");
-        if
-            :: do_bazy ? MSG (ack,  S4_Ack, head) ->
-               skip;
-               printf("Odzyskano połączenie - baza\n");
-            :: timeout ->
-               printf("Utracono połączenie - baza\n");
-        fi;
-    fi;
+    do_bazy ? MSG (ack,  S1_Request, head) -> skip;
     newSessionId();
     printf("Baza wchodzi w pętlę główną\n");
     do
@@ -86,6 +75,15 @@ active proctype Baza() {
                 :: do_bazy ? MSG (0, S6_Close_Session, head);
                     printf("Zamiast ack dostałem close session. Ok.\n");
                     closeSession();
+                :: timeout -> 
+                    printf("Problemy z połączeniem - baza\n");
+                    if
+                        :: do_bazy ? MSG (ack,  S3_Control, head) -> 
+                            skip;
+                            printf("Odzyskano połączenie - baza\n");
+                        :: timeout ->
+                            printf("Utracono połączenie - baza\n");
+                    fi;
             fi;
         :: do_robotow ! MSG (0, S8_Cancelled, head) ->
             printf("Wysylam cancelled, zwijamy interes\n");
