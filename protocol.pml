@@ -21,6 +21,9 @@ typedef header {
 chan do_robotow = [1] of { mtype, bit, byte, header};
 chan do_bazy    = [1] of { mtype, bit, byte, header};
 
+chan do_robotow_proxy = [1] of { mtype, bit, byte, header};
+chan do_bazy_proxy    = [1] of { mtype, bit, byte, header};
+
 bit activeSessions[2];
 
 inline newSessionId() {
@@ -36,12 +39,12 @@ inline newSessionId() {
     }
     goto FAIL;
 SUCCESS:
-    do_robotow ! MSG (false, S2_Acceptance, head);
+    do_robotow_proxy ! MSG (false, S2_Acceptance, head);
     goto END;
 FAIL:
     head.second = REASON_TOOMANY;
     if 
-        :: do_robotow ! MSG (0, S5_Rejection, head);
+        :: do_robotow_proxy ! MSG (0, S5_Rejection, head);
         :: timeout -> assert(0);
     fi;
     goto KONIEC_BAZY;
@@ -51,7 +54,7 @@ END:
 inline closeSession() {
     printf("Baza otrzymuje S6, zamykamy interes\n");
     if 
-        :: do_robotow ! MSG (0, S7_End, head);
+        :: do_robotow_proxy ! MSG (0, S7_End, head);
         :: timeout -> assert(0);
     fi;
     goto KONIEC_BAZY;
@@ -67,7 +70,7 @@ active proctype Baza() {
     do
         :: do_bazy ? MSG (0, S6_Close_Session, head) ->
             closeSession();
-        :: do_robotow ! MSG (0, S3_Control, head) ->
+        :: do_robotow_proxy ! MSG (0, S3_Control, head) ->
             printf("Wysylam control, czekam na ack\n");
             if
                 :: do_bazy ? MSG (ack, S4_Ack, head);
@@ -85,10 +88,10 @@ active proctype Baza() {
                             printf("Utracono połączenie - baza\n");
                     fi;
             fi;
-        :: do_robotow ! MSG (0, S8_Cancelled, head) ->
+        :: do_robotow_proxy ! MSG (0, S8_Cancelled, head) ->
             printf("Wysylam cancelled, zwijamy interes\n");
             if 
-                :: do_robotow ! MSG (0, S7_End, head);
+                :: do_robotow_proxy ! MSG (0, S7_End, head);
                 :: timeout -> skip;
             fi;
             goto KONIEC_BAZY;
@@ -104,7 +107,7 @@ active proctype Robot() {
     head.first = 1;
 
     atomic {
-        do_bazy ! MSG (0, S1_Request, head);
+        do_bazy_proxy ! MSG (0, S1_Request, head);
         do_robotow ? MSG (ack, msgid, head);
         if 
             :: (msgid == S2_Acceptance) ->
@@ -119,15 +122,15 @@ active proctype Robot() {
     do
         :: do_robotow ? MSG (ack, S3_Control, head) ->
             printf("Dostalem control, odsylam ack\n");
-            do_bazy ! MSG (ack, S4_Ack, head);
+            do_bazy_proxy ! MSG (ack, S4_Ack, head);
 	:: do_robotow ? MSG (ack, S2_Acceptance, head) ->assert(0);
 	:: do_robotow ? MSG (ack, S5_Rejection, head) ->assert(0);
 	:: do_robotow ? MSG (ack, S7_End, head) ->assert(0);
         :: do_robotow ? MSG (ack, S8_Cancelled, head);
             printf("Robot otrzymal canceled\n");
-            do_bazy ! MSG (0, S7_End, head);
+            do_bazy_proxy ! MSG (0, S7_End, head);
             goto KONIEC_ROBOTA;
-        :: do_bazy ! MSG (0, S6_Close_Session, head);
+        :: do_bazy_proxy ! MSG (0, S6_Close_Session, head);
             printf("Robot wysyła close session\n");
             do
                 :: do_robotow ? MSG (0, msgid, head);
@@ -136,7 +139,7 @@ active proctype Robot() {
                 // it happens whenever base sends this signal before it really receives S6_Close_Session 
                 if
                     :: (msgid == S7_End) -> goto KONIEC_ROBOTA;
-                    :: else assert(0);
+                    :: else skip;
                 fi;
 
             od;
@@ -146,4 +149,34 @@ active proctype Robot() {
             break;
     od;
 KONIEC_ROBOTA:
+}
+
+active proctype PerfectProxy() {
+    bit ack;
+    byte msgid;
+    header head;
+    do
+        :: do_robotow_proxy ? MSG (ack, msgid, head) ->
+            do_robotow ! MSG (ack, msgid, head);
+        :: do_bazy_proxy ? MSG (ack, msgid, head) ->
+            do_bazy ! MSG (ack, msgid, head);
+    od
+}
+
+proctype Proxy() {
+    bit ack;
+    byte msgid;
+    header head;
+    do
+        :: do_robotow_proxy ? MSG (ack, msgid, head) ->
+        if
+            :: do_robotow ! MSG (ack, msgid, head);
+            :: skip;
+        fi
+        :: do_bazy_proxy ? ACK (ack, msgid, head) ->
+        if
+            :: do_bazy ! ACK (ack, msgid, head);
+            :: skip
+        fi
+    od
 }
